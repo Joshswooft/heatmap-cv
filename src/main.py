@@ -4,16 +4,17 @@ import copy
 import numpy as np
 
 def make_video(images):
-    # TODO
     fps = 24
+    print("creating heatmap video...")
     # fourcc is a 4-byte code used to specify the video codec
-    fourcc = VideoWriter_fourcc(*'MP42')
+    fourcc = VideoWriter_fourcc(*'MJPG')
     isFirstFrame = True
+    print(len(images))
     for (frame) in images:
         if isFirstFrame:
             isFirstFrame = False
             height, width = frame.shape[:2]
-        vw = VideoWriter('./assets/heatmap.mp4', fourcc, float(fps), (width, height))
+            vw = VideoWriter('./assets/heatmap.avi', fourcc, float(fps), (width, height))
         vw.write(frame)
 
     # tell video writer we are finished
@@ -62,8 +63,8 @@ def main():
 
         color_image_video = cv.applyColorMap(accum_image, cv.COLORMAP_HOT)
         # overlay the color mapped image to the first frame
-        result_overlay = cv.addWeighted(first_frame, 0.7, color_image_video, 0.7, 0)
-        heatmap_imgs.append(result_overlay)
+        heatmap_frame = cv.addWeighted(frame, 0.7, color_image_video, 0.7, 0)
+        heatmap_imgs.append(heatmap_frame)
 
         #show the current frame and the fg masks
         cv.imshow('Frame', frame)
