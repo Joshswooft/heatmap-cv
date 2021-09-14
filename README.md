@@ -1,4 +1,4 @@
-# heatmap-cv
+# Heatmap
 Generating a heatmap using openCV
 
 # Getting Started
