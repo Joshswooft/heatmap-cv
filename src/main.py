@@ -88,18 +88,19 @@ def main():
     )
     parser.add_argument('--path', action="store", required=True, help="The path to the file that you wish to generate the heatmap for", default="./assets/video.mp4", widget="FileChooser")
     parser.add_argument('--debug', action="store_true", default=False, help="Display additional debug information")
-    parser.add_argument('--out', action="store", help="File path to save the heatmap to")
+    parser.add_argument('--out', action="store", help="File path to save the heatmap to", type=str)
 
 
     results = parser.parse_args()
-    print(results)
 
     video_path = results.path
     debug_mode=results.debug
     output_path = results.out
     heatmap_imgs = process_video(video_path, debug_mode)
-    if len(output_path) != 0:
+
+    if output_path is not None:
         make_video(heatmap_imgs, output_path)
+        
     print("finished")
 
 if __name__ == '__main__':
