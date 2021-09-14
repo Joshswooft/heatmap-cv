@@ -2,8 +2,9 @@ import cv2 as cv
 from cv2 import VideoWriter, VideoWriter_fourcc
 import numpy as np
 from tqdm import tqdm
+import argparse
 
-def make_video(images: list):
+def make_video(images: list, path="./assets/heatmap.avi"):
     fps = 24
     # fourcc is a 4-byte code used to specify the video codec
     fourcc = VideoWriter_fourcc(*'MJPG')
@@ -13,13 +14,13 @@ def make_video(images: list):
         if is_first_frame:
             is_first_frame = False
             height, width = frame.shape[:2]
-            vw = VideoWriter('./assets/heatmap.avi', fourcc, float(fps), (width, height))
+            vw = VideoWriter(path, fourcc, float(fps), (width, height))
         vw.write(frame)
 
     # tell video writer we are finished
     vw.release()
 
-def process_video(video_path: str) -> list:
+def process_video(video_path: str, debug: bool) -> list:
     heatmap_imgs = []
     background_subtractor = cv.createBackgroundSubtractorMOG2()
     capture = cv.VideoCapture(video_path)
@@ -45,12 +46,6 @@ def process_video(video_path: str) -> list:
 
         foreground_mask = background_subtractor.apply(frame)
 
-        # for debugging
-        #get the frame number and write it on the current frame
-        cv.rectangle(frame, (10, 2), (100,20), (255,255,255), -1)
-        cv.putText(frame, str(capture.get(cv.CAP_PROP_POS_FRAMES)), (15, 15),
-                cv.FONT_HERSHEY_SIMPLEX, 0.5 , (0,0,0))
-
         # use threshold to remove noise from video
         threshold = 2
         maxValue = 2
@@ -63,10 +58,17 @@ def process_video(video_path: str) -> list:
         heatmap_frame = cv.addWeighted(frame, 0.7, color_image_video, 0.7, 0)
         heatmap_imgs.append(heatmap_frame)
 
-        #show the current frame and the fg masks
-        cv.imshow('Frame', frame)
-        cv.imshow('FG Mask', foreground_mask)
-        cv.imshow('With overlay', heatmap_frame)
+        # for debugging
+        if debug == True:
+            #get the frame number and write it on the current frame
+            cv.rectangle(frame, (10, 2), (100,20), (255,255,255), -1)
+            cv.putText(frame, str(capture.get(cv.CAP_PROP_POS_FRAMES)), (15, 15),
+                    cv.FONT_HERSHEY_SIMPLEX, 0.5 , (0,0,0))
+            #show the current frame and the fg masks
+            cv.imshow('Frame', frame)
+            cv.imshow('FG Mask', foreground_mask)
+
+        cv.imshow('Heatmap', heatmap_frame)
 
         keyboard = cv.waitKey(30)
         if keyboard == 'q' or keyboard == 27:
@@ -79,9 +81,24 @@ def process_video(video_path: str) -> list:
 
 
 def main():
-    video_path = "assets/video.mp4"
-    heatmap_imgs = process_video(video_path)
-    make_video(heatmap_imgs)
+    parser = argparse.ArgumentParser(
+        description='Heatmap generator',
+    )
+    parser.add_argument('--path', action="store", required=True, help="The path to the file that you wish to generate the heatmap for")
+    parser.add_argument('--s', action="store_true", default=False, help="Choose to save the heatmap")
+    parser.add_argument('--debug', action="store_true", default=False, help="Display additional debug information")
+    parser.add_argument('--out', action="store", help="File path to save the heatmap to")
+
+
+    results = parser.parse_args()
+    print(results)
+
+    video_path = results.path
+    debug_mode=results.debug
+    output_path = results.out
+    heatmap_imgs = process_video(video_path, debug_mode)
+    if results.s == True:
+        make_video(heatmap_imgs, output_path)
     print("finished")
 
 if __name__ == '__main__':
