@@ -2,7 +2,8 @@ import cv2 as cv
 from cv2 import VideoWriter, VideoWriter_fourcc
 import numpy as np
 from tqdm import tqdm
-import argparse
+from gooey import Gooey, GooeyParser
+
 
 def make_video(images: list, path="./assets/heatmap.avi"):
     fps = 24
@@ -79,13 +80,13 @@ def process_video(video_path: str, debug: bool) -> list:
     cv.destroyAllWindows()
     return heatmap_imgs
 
-
+@Gooey(program_name='Heatmap generator')
 def main():
-    parser = argparse.ArgumentParser(
-        description='Heatmap generator',
+    # drop in replacement for argparse.ArgumentParser
+    parser = GooeyParser(
+        description='Generates a heatmap for a video',
     )
-    parser.add_argument('--path', action="store", required=True, help="The path to the file that you wish to generate the heatmap for", default="./assets/video.mp4")
-    parser.add_argument('--s', action="store_true", default=False, help="Choose to save the heatmap")
+    parser.add_argument('--path', action="store", required=True, help="The path to the file that you wish to generate the heatmap for", default="./assets/video.mp4", widget="FileChooser")
     parser.add_argument('--debug', action="store_true", default=False, help="Display additional debug information")
     parser.add_argument('--out', action="store", help="File path to save the heatmap to")
 
@@ -97,7 +98,7 @@ def main():
     debug_mode=results.debug
     output_path = results.out
     heatmap_imgs = process_video(video_path, debug_mode)
-    if results.s == True:
+    if len(output_path) != 0:
         make_video(heatmap_imgs, output_path)
     print("finished")
 
