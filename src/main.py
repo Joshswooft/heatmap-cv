@@ -1,18 +1,17 @@
 import cv2 as cv
 from cv2 import VideoWriter, VideoWriter_fourcc
-import copy
 import numpy as np
+from tqdm import tqdm
 
-def make_video(images):
+def make_video(images: list):
     fps = 24
-    print("creating heatmap video...")
     # fourcc is a 4-byte code used to specify the video codec
     fourcc = VideoWriter_fourcc(*'MJPG')
-    isFirstFrame = True
+    is_first_frame = True
     print(len(images))
-    for (frame) in images:
-        if isFirstFrame:
-            isFirstFrame = False
+    for (frame) in tqdm(images, desc="Saving video"):
+        if is_first_frame:
+            is_first_frame = False
             height, width = frame.shape[:2]
             vw = VideoWriter('./assets/heatmap.avi', fourcc, float(fps), (width, height))
         vw.write(frame)
@@ -20,31 +19,29 @@ def make_video(images):
     # tell video writer we are finished
     vw.release()
 
-    pass
-
-def main():
+def process_video(video_path: str) -> list:
     heatmap_imgs = []
     background_subtractor = cv.createBackgroundSubtractorMOG2()
-    videoPath = "assets/video.mp4"
-    capture = cv.VideoCapture(videoPath)
+    capture = cv.VideoCapture(video_path)
 
     if not capture.isOpened():
-        print('Unable to open: ' + videoPath)
+        print('Unable to open: ' + video_path)
         exit(0)
 
-    print("generating heatmap for video: " + videoPath)
+    print("generating heatmap for video: " + video_path)
 
-    isFirstFrame = True
-    while True:
-        ret, frame = capture.read()
+    capture_length = int(capture.get(cv.CAP_PROP_FRAME_COUNT))
+
+    is_first_frame = True
+    for i in tqdm(range(0, capture_length), desc="Processing Frames"):
+        _, frame = capture.read()
         if frame is None:
             break
 
-        if isFirstFrame:
-            first_frame = copy.deepcopy(frame)
+        if is_first_frame:
             height, width = frame.shape[:2]
             accum_image = np.zeros((height, width), np.uint8)
-            isFirstFrame = False
+            is_first_frame = False
 
         foreground_mask = background_subtractor.apply(frame)
 
@@ -57,7 +54,7 @@ def main():
         # use threshold to remove noise from video
         threshold = 2
         maxValue = 2
-        ret, dist = cv.threshold(foreground_mask, threshold, maxValue, cv.THRESH_BINARY)
+        _, dist = cv.threshold(foreground_mask, threshold, maxValue, cv.THRESH_BINARY)
 
         accum_image = cv.add(accum_image, dist)
 
@@ -69,6 +66,7 @@ def main():
         #show the current frame and the fg masks
         cv.imshow('Frame', frame)
         cv.imshow('FG Mask', foreground_mask)
+        cv.imshow('With overlay', heatmap_frame)
 
         keyboard = cv.waitKey(30)
         if keyboard == 'q' or keyboard == 27:
@@ -77,8 +75,13 @@ def main():
     # cleanup
     capture.release()
     cv.destroyAllWindows()
-    make_video(heatmap_imgs)
+    return heatmap_imgs
 
+
+def main():
+    video_path = "assets/video.mp4"
+    heatmap_imgs = process_video(video_path)
+    make_video(heatmap_imgs)
     print("finished")
 
 if __name__ == '__main__':
