@@ -19,3 +19,8 @@ If VSC is not linting or suggestions aren't working correctly then:
 
 1. press cmd + shift + p to bring up command palette and search for python: select interpreter
 2. Pick then one which is associated with your virtual environment
+
+
+<!-- TODO: add gif of heatmap -->
+
+<img src="./readme_assets/output.gif" alt="My Project GIF">

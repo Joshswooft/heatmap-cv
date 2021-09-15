@@ -1,6 +1,8 @@
 import cv2 as cv
 from cv2 import VideoWriter, VideoWriter_fourcc
 import numpy as np
+
+# TODO: some reason tqdm is no longer working with Gooey
 from tqdm import tqdm
 from gooey import Gooey, GooeyParser
 
@@ -100,7 +102,7 @@ def main():
 
     if output_path is not None:
         make_video(heatmap_imgs, output_path)
-        
+
     print("finished")
 
 if __name__ == '__main__':
