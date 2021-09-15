@@ -3,22 +3,23 @@ from cv2 import VideoWriter, VideoWriter_fourcc
 import numpy as np
 
 # TODO: some reason tqdm is no longer working with Gooey
-from tqdm import tqdm
+# from tqdm import tqdm
 from gooey import Gooey, GooeyParser
 
 
 def make_video(images: list, path="./assets/heatmap.avi"):
+    print("Saving video...")
     fps = 24
     # fourcc is a 4-byte code used to specify the video codec
     fourcc = VideoWriter_fourcc(*'MJPG')
     is_first_frame = True
-    print(len(images))
-    for (frame) in tqdm(images, desc="Saving video"):
+    for i in range(0, len(images)):
         if is_first_frame:
             is_first_frame = False
-            height, width = frame.shape[:2]
+            height, width = images[i].shape[:2]
             vw = VideoWriter(path, fourcc, float(fps), (width, height))
-        vw.write(frame)
+        vw.write(images[i])
+        print(f"progress: {i}/{len(images)}")
 
     # tell video writer we are finished
     vw.release()
@@ -37,7 +38,7 @@ def process_video(video_path: str, debug: bool) -> list:
     capture_length = int(capture.get(cv.CAP_PROP_FRAME_COUNT))
 
     is_first_frame = True
-    for i in tqdm(range(0, capture_length), desc="Processing Frames"):
+    for i in range(0, capture_length):
         _, frame = capture.read()
         if frame is None:
             break
@@ -77,12 +78,22 @@ def process_video(video_path: str, debug: bool) -> list:
         if keyboard == 'q' or keyboard == 27:
             break
 
+        print(f"progress: {i}/{capture_length}")
+
     # cleanup
     capture.release()
     cv.destroyAllWindows()
     return heatmap_imgs
 
-@Gooey(program_name='Heatmap generator')
+@Gooey(
+    program_name='Heatmap generator',
+    progress_regex=r"^progress: (?P<current>\d+)/(?P<total>\d+)$",
+    progress_expr="current / total * 100",
+    hide_progress_msg=True,
+    timing_options={
+        'show_time_remaining':True,
+        'hide_time_remaining_on_complete':True
+    })
 def main():
     # drop in replacement for argparse.ArgumentParser
     parser = GooeyParser(
